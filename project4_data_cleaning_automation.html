@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project 4 — Data Cleaning & Reporting Automation | Thiranex Internship</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700;800&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f7f6f2;
+    --surface: #ffffff;
+    --surface2: #f0ede6;
+    --border: #e2ddd5;
+    --accent: #1a1a2e;
+    --accent2: #16213e;
+    --green: #0f9b6e;
+    --amber: #d97706;
+    --red: #dc2626;
+    --blue: #2563eb;
+    --text: #1a1a1a;
+    --muted: #6b6b6b;
+    --light: #9ca3af;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--accent);
+    color: #fff;
+    padding: 2.5rem 3rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 260px; height: 260px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; left: 200px;
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.03);
+  }
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .badge-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    letter-spacing: .04em;
+  }
+  .badge-num { background: #0f9b6e; color: #fff; }
+  .badge-status { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.85); }
+  .badge-due { background: rgba(255,165,0,0.25); color: #ffd080; }
+  .header h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: .6rem;
+  }
+  .header h1 span { color: #0f9b6e; }
+  .header-sub { font-size: 14px; color: rgba(255,255,255,0.55); max-width: 560px; line-height: 1.6; }
+  .header-meta {
+    display: flex;
+    gap: 2rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    flex-wrap: wrap;
+  }
+  .meta-item label { font-size: 11px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: .06em; display: block; margin-bottom: 3px; }
+  .meta-item span { font-size: 14px; color: rgba(255,255,255,0.85); font-weight: 500; }
+
+  /* ── LAYOUT ── */
+  .main { max-width: 1100px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+  .section { margin-bottom: 2.5rem; }
+  .section-head {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 1.25rem;
+  }
+  .section-head h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--muted);
+  }
+  .section-line { flex: 1; height: 1px; background: var(--border); }
+
+  /* ── METRICS ── */
+  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .metric-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.1rem 1.25rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 12px 12px 0 0;
+  }
+  .metric-card.green::before { background: var(--green); }
+  .metric-card.amber::before { background: var(--amber); }
+  .metric-card.red::before { background: var(--red); }
+  .metric-card.blue::before { background: var(--blue); }
+  .metric-card.neutral::before { background: var(--accent); }
+  .metric-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+  .metric-value { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; line-height: 1; }
+  .metric-value.green { color: var(--green); }
+  .metric-value.amber { color: var(--amber); }
+  .metric-value.red { color: var(--red); }
+  .metric-value.blue { color: var(--blue); }
+  .metric-sub { font-size: 11px; color: var(--light); margin-top: 4px; }
+
+  /* ── QUALITY BAR ── */
+  .quality-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+  .quality-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: .75rem; }
+  .quality-top span { font-size: 13px; color: var(--muted); }
+  .quality-top strong { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800; color: var(--green); }
+  .q-track { height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+  .q-fill { height: 100%; background: linear-gradient(90deg, var(--green), #34d399); border-radius: 4px; transition: width .8s cubic-bezier(.4,0,.2,1); }
+
+  /* ── TABS ── */
+  .tabs { display: flex; gap: 4px; background: var(--surface2); border-radius: 10px; padding: 4px; margin-bottom: 1.25rem; flex-wrap: wrap; }
+  .tab-btn {
+    flex: 1; min-width: 120px; padding: 8px 14px;
+    border: none; border-radius: 8px;
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500;
+    cursor: pointer; background: transparent; color: var(--muted);
+    transition: all .2s;
+  }
+  .tab-btn.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── TABLE ── */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    background: var(--surface2); padding: 10px 14px;
+    text-align: left; font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .06em; color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+  tbody td { padding: 9px 14px; border-bottom: 1px solid var(--border); color: var(--text); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--bg); }
+  .mono { font-family: 'DM Mono', monospace; font-size: 12px; }
+  .pill {
+    display: inline-block; font-size: 11px; font-weight: 600;
+    padding: 2px 9px; border-radius: 20px; letter-spacing: .02em;
+  }
+  .pill-fixed { background: #dcfce7; color: #166534; }
+  .pill-removed { background: #fee2e2; color: #991b1b; }
+  .pill-filled { background: #fef3c7; color: #92400e; }
+  .pill-ok { background: #dcfce7; color: #166534; }
+  .issue-row { background: #fffbeb !important; }
+
+  /* ── LOG ── */
+  .log-entry {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: .75rem 0; border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .log-entry:last-child { border-bottom: none; }
+  .log-icon {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; flex-shrink: 0; margin-top: 1px;
+  }
+  .log-icon.green { background: #dcfce7; color: #166534; }
+  .log-icon.amber { background: #fef3c7; color: #92400e; }
+  .log-icon.red { background: #fee2e2; color: #991b1b; }
+  .log-text strong { font-weight: 500; display: block; }
+  .log-text small { color: var(--muted); font-family: 'DM Mono', monospace; font-size: 11px; }
+
+  /* ── CHARTS ── */
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+  @media (max-width: 640px) { .charts-grid { grid-template-columns: 1fr; } }
+  .chart-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.25rem;
+  }
+  .chart-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; margin-bottom: 1rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+
+  /* ── REPORT INSIGHTS ── */
+  .insight-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 600px) { .insight-grid { grid-template-columns: 1fr; } }
+  .insight-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.25rem 1.5rem;
+  }
+  .insight-card h3 { font-size: 13px; font-weight: 600; margin-bottom: .5rem; display: flex; align-items: center; gap: 6px; }
+  .insight-card p { font-size: 13px; color: var(--muted); line-height: 1.65; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+  /* ── UPLOAD / ACTIONS ── */
+  .upload-zone {
+    border: 2px dashed var(--border); border-radius: 12px;
+    padding: 2.5rem; text-align: center; cursor: pointer;
+    background: var(--surface); transition: border-color .2s, background .2s;
+    margin-bottom: 1.25rem;
+  }
+  .upload-zone:hover { border-color: var(--accent); background: var(--surface2); }
+  .upload-zone .upload-icon { font-size: 2rem; margin-bottom: .75rem; }
+  .upload-zone p { font-size: 14px; color: var(--muted); }
+  .upload-zone small { font-size: 12px; color: var(--light); }
+  #fileInput { display: none; }
+
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all .15s; border: 1px solid transparent;
+    font-family: 'Inter', sans-serif;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #0f172a; }
+  .btn-outline { background: var(--surface); color: var(--text); border-color: var(--border); }
+  .btn-outline:hover { background: var(--surface2); }
+  .btn-green { background: var(--green); color: #fff; }
+  .btn-green:hover { background: #0a7a57; }
+
+  /* ── FOOTER ── */
+  .footer {
+    background: var(--accent); color: rgba(255,255,255,0.5);
+    text-align: center; padding: 1.5rem;
+    font-size: 12px; font-family: 'DM Mono', monospace;
+  }
+  .footer strong { color: rgba(255,255,255,0.85); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div class="badge-row">
+      <span class="badge badge-num">Project 04</span>
+      <span class="badge badge-status">Data Analytics Track</span>
+      <span class="badge badge-due">Due: 29 May 2026</span>
+    </div>
+  </div>
+  <h1>Data Cleaning &<br><span>Reporting Automation</span></h1>
+  <p class="header-sub">Automate data cleaning workflows — handle missing values, duplicates, and inconsistent formatting. Generate visual reports and download clean datasets.</p>
+  <div class="header-meta">
+    <div class="meta-item"><label>Intern</label><span id="internName">Loading…</span></div>
+    <div class="meta-item"><label>Organisation</label><span>Thiranex</span></div>
+    <div class="meta-item"><label>Tools Used</label><span>JavaScript · Chart.js · CSV Engine</span></div>
+    <div class="meta-item"><label>Status</label><span style="color:#0f9b6e">✓ Completed</span></div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- UPLOAD -->
+  <div class="section">
+    <div class="section-head">
+      <h2>Data Input</h2><div class="section-line"></div>
+    </div>
+    <div class="upload-zone" onclick="document.getElementById('fileInput').click()" id="uploadZone">
+      <div class="upload-icon">📂</div>
+      <p>Click to upload your CSV file</p>
+      <small>Drag &amp; drop or click — .csv files supported</small>
+    </div>
+    <input type="file" id="fileInput" accept=".csv">
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="loadSample()">▶ Load Sample Sales Data</button>
+      <button class="btn btn-outline" onclick="resetAll()">↺ Reset</button>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results" style="display:none">
+
+    <!-- METRICS -->
+    <div class="section">
+      <div class="section-head"><h2>Summary Metrics</h2><div class="section-line"></div></div>
+      <div class="metrics-grid" id="metricsGrid"></div>
+    </div>
+
+    <!-- QUALITY SCORE -->
+    <div class="quality-wrap">
+      <div class="quality-top">
+        <span>Overall Data Quality Score</span>
+        <strong id="qualScore">—</strong>
+      </div>
+      <div class="q-track"><div class="q-fill" id="qualFill" style="width:0%"></div></div>
+    </div>
+
+    <!-- TABS -->
+    <div class="section">
+      <div class="section-head"><h2>Analysis</h2><div class="section-line"></div></div>
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('issues',this)">🔍 Issues Found</button>
+        <button class="tab-btn" onclick="switchTab('clean',this)">✅ Clean Data</button>
+        <button class="tab-btn" onclick="switchTab('charts',this)">📊 Visual Report</button>
+        <button class="tab-btn" onclick="switchTab('log',this)">📋 Audit Log</button>
+      </div>
+
+      <!-- ISSUES -->
+      <div class="tab-panel active" id="tab-issues">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Row #</th><th>Column</th><th>Issue Type</th><th>Original Value</th><th>Fix Applied</th><th>Status</th></tr></thead>
+            <tbody id="issuesBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CLEAN DATA -->
+      <div class="tab-panel" id="tab-clean">
+        <div class="btn-row">
+          <button class="btn btn-green" onclick="downloadCSV()">⬇ Download Clean CSV</button>
+          <button class="btn btn-outline" onclick="downloadReport()">📄 Download Audit Report (.txt)</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead id="cleanHead"></thead>
+            <tbody id="cleanBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CHARTS -->
+      <div class="tab-panel" id="tab-charts">
+        <div class="charts-grid">
+          <div class="chart-card">
+            <div class="chart-title">Revenue by Region</div>
+            <div style="position:relative;height:220px"><canvas id="chartRegion" role="img" aria-label="Bar chart showing revenue by region"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Orders by Status</div>
+            <div style="position:relative;height:220px"><canvas id="chartStatus" role="img" aria-label="Doughnut chart showing orders by status"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Issue Breakdown</div>
+            <div style="position:relative;height:220px"><canvas id="chartIssues" role="img" aria-label="Bar chart of issue types"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Top Products by Revenue</div>
+            <div style="position:relative;height:220px"><canvas id="chartProducts" role="img" aria-label="Horizontal bar chart of top products"></canvas></div>
+          </div>
+        </div>
+        <div class="insight-grid" id="insightGrid"></div>
+      </div>
+
+      <!-- LOG -->
+      <div class="tab-panel" id="tab-log">
+        <div class="table-wrap" style="padding:1rem 1.25rem;border-radius:12px;background:var(--surface)">
+          <div id="logList"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <strong>Project 4 — Data Cleaning &amp; Reporting Automation</strong> &nbsp;·&nbsp; Thiranex Data Analytics Internship &nbsp;·&nbsp; Built with JavaScript + Chart.js
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const SAMPLE = `order_id,customer_name,region,product,quantity,unit_price,revenue,order_date,status
+1001,Alice Johnson,North,Laptop,2,899.99,1799.98,2024-01-15,Completed
+1002,bob smith,South,Monitor,,249.99,,2024-01-16,completed
+1003,Carol White,EAST,Keyboard,1,49.99,49.99,2024-01-17,Completed
+1004,David Brown,West,Laptop,1,899.99,899.99,15-01-2024,Completed
+1005,,North,Mouse,3,19.99,59.97,2024-01-19,Pending
+1006,Eve Davis,South,Monitor,2,249.99,499.98,2024-01-20,CANCELLED
+1007,Frank Lee,East,Laptop,1,899.99,899.99,2024-01-21,Completed
+1001,Alice Johnson,North,Laptop,2,899.99,1799.98,2024-01-15,Completed
+1008,Grace Kim,West,Keyboard,abc,49.99,,2024-01-22,Completed
+1009,Henry Ford,North,,2,29.99,59.98,2024-01-23,Pending
+1010,Iris Chan,East,Mouse,5,19.99,99.95,2024-01-24,Completed
+1011,Jack Ma,South,Monitor,1,249.99,249.99,2024-01-25,
+1012,Karen Lee,WEST,Laptop,2,899.99,1799.98,2024-01-26,Completed
+1013,Liam Brown,North,Keyboard,3,49.99,149.97,2024/01/27,Completed
+1014,Mia Wang,East,Mouse,0,19.99,0,2024-01-28,Completed`;
+
+let rawData=[], cleanedData=[], issues=[], auditLog=[], headers=[];
+let chartRegion=null, chartStatus=null, chartIssues=null, chartProducts=null;
+
+// Set intern name from URL param or default
+const params = new URLSearchParams(window.location.search);
+document.getElementById('internName').textContent = params.get('name') || 'Intern';
+
+function loadSample() {
+  parseAndProcess(SAMPLE);
+  document.getElementById('uploadZone').style.display='none';
+}
+
+document.getElementById('fileInput').addEventListener('change', function(e){
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ev => parseAndProcess(ev.target.result);
+  r.readAsText(f);
+  document.getElementById('uploadZone').style.display='none';
+});
+
+function resetAll() {
+  rawData=[]; cleanedData=[]; issues=[]; auditLog=[]; headers=[];
+  document.getElementById('results').style.display='none';
+  document.getElementById('uploadZone').style.display='block';
+  document.getElementById('fileInput').value='';
+}
+
+// ── PARSE & PROCESS ───────────────────────────────────────────────────────────
+function parseAndProcess(txt) {
+  const lines = txt.trim().split('\n');
+  headers = lines[0].split(',').map(s=>s.trim());
+  rawData = lines.slice(1).map(l=>l.split(',').map(s=>s.trim()));
+  issues=[]; auditLog=[];
+  cleanedData = rawData.map(r=>[...r]);
+
+  // 1. Duplicates
+  const seen=new Set(), toRemove=new Set();
+  rawData.forEach((row,ri)=>{
+    const key=row.join('|');
+    if(seen.has(key)){ toRemove.add(ri); addIssue(ri+2,'All','Duplicate row',row[0],'Row removed','removed'); addLog('🗑','red',`Row ${ri+2} — duplicate removed`,`Key: ${row[0]}`); }
+    seen.add(key);
+  });
+  cleanedData = cleanedData.filter((_,i)=>!toRemove.has(i));
+  const rowMap = []; rawData.forEach((_,i)=>{ if(!toRemove.has(i)) rowMap.push(i); });
+
+  // 2. Per-cell cleaning
+  cleanedData.forEach((row,ri)=>{
+    const orig = rowMap[ri] ?? ri;
+    headers.forEach((col,ci)=>{
+      let v = row[ci]||'';
+      const lc = col.toLowerCase();
+
+      // Missing
+      if(v==='') {
+        const nums=['quantity','unit_price','revenue'];
+        const txts=['customer_name','product','status','region'];
+        if(nums.includes(lc)){ row[ci]='0'; addIssue(orig+2,col,'Missing value','(empty)','Filled → 0','filled'); addLog('✏️','amber',`Row ${orig+2} — "${col}" filled`,'Empty numeric → 0'); }
+        else if(txts.includes(lc)){ row[ci]='Unknown'; addIssue(orig+2,col,'Missing value','(empty)','Filled → "Unknown"','filled'); addLog('✏️','amber',`Row ${orig+2} — "${col}" filled`,'Empty text → "Unknown"'); }
+        return;
+      }
+
+      // Casing
+      if(['customer_name','region','status','product'].includes(lc)){
+        const proper = v.charAt(0).toUpperCase()+v.slice(1).toLowerCase();
+        if(proper!==v){ addIssue(orig+2,col,'Inconsistent casing',v,proper,'fixed'); addLog('🔤','green',`Row ${orig+2} — "${col}" normalised`,`"${v}" → "${proper}"`); row[ci]=proper; }
+      }
+
+      // Invalid numeric
+      if(lc==='quantity' && v!=='0' && isNaN(Number(v))){
+        addIssue(orig+2,col,'Invalid numeric',v,'Set to 0','fixed'); addLog('⚠️','amber',`Row ${orig+2} — "${col}" invalid`,`"${v}" is not a number → 0`); row[ci]='0';
+      }
+
+      // Date formats
+      if(lc==='order_date'){
+        if(/^\d{2}-\d{2}-\d{4}$/.test(v)){ const[d,m,y]=v.split('-'); const fixed=`${y}-${m}-${d}`; addIssue(orig+2,col,'Date format',v,fixed,'fixed'); addLog('📅','green',`Row ${orig+2} — date reformatted`,`"${v}" → "${fixed}"`); row[ci]=fixed; }
+        else if(/^\d{4}\/\d{2}\/\d{2}$/.test(v)){ const fixed=v.replace(/\//g,'-'); addIssue(orig+2,col,'Date format',v,fixed,'fixed'); addLog('📅','green',`Row ${orig+2} — date reformatted`,`"${v}" → "${fixed}"`); row[ci]=fixed; }
+      }
+    });
+  });
+
+  render();
+}
+
+function addIssue(row,col,issue,orig,fix,status){ issues.push({row,col,issue,orig,fix,status}); }
+function addLog(icon,color,text,sub){ auditLog.push({icon,color,text,sub}); }
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function render(){
+  const dupes=issues.filter(i=>i.status==='removed').length;
+  const filled=issues.filter(i=>i.status==='filled').length;
+  const fixed=issues.filter(i=>i.status==='fixed').length;
+  const total=issues.length;
+  const score=Math.max(0,Math.round(100-(total/(rawData.length*headers.length))*100));
+
+  document.getElementById('metricsGrid').innerHTML=`
+    <div class="metric-card neutral"><div class="metric-label">Raw Rows</div><div class="metric-value">${rawData.length}</div><div class="metric-sub">Before cleaning</div></div>
+    <div class="metric-card green"><div class="metric-label">Clean Rows</div><div class="metric-value green">${cleanedData.length}</div><div class="metric-sub">After cleaning</div></div>
+    <div class="metric-card red"><div class="metric-label">Duplicates</div><div class="metric-value red">${dupes}</div><div class="metric-sub">Removed</div></div>
+    <div class="metric-card amber"><div class="metric-label">Missing Values</div><div class="metric-value amber">${filled}</div><div class="metric-sub">Auto-filled</div></div>
+    <div class="metric-card blue"><div class="metric-label">Format Fixes</div><div class="metric-value blue">${fixed}</div><div class="metric-sub">Corrected</div></div>
+    <div class="metric-card green"><div class="metric-label">Quality Score</div><div class="metric-value green">${score}%</div><div class="metric-sub">Data integrity</div></div>`;
+
+  document.getElementById('qualScore').textContent=score+'%';
+  setTimeout(()=>{ document.getElementById('qualFill').style.width=score+'%'; },100);
+
+  renderIssues(); renderClean(); renderCharts(dupes,filled,fixed,score); renderLog();
+  document.getElementById('results').style.display='block';
+  window.scrollTo({top:document.getElementById('results').offsetTop-20,behavior:'smooth'});
+}
+
+function renderIssues(){
+  const tb=document.getElementById('issuesBody'); tb.innerHTML='';
+  if(!issues.length){ tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">No issues — data is already clean!</td></tr>'; return; }
+  issues.forEach(i=>{
+    const tr=document.createElement('tr');
+    tr.className=i.status==='removed'?'issue-row':'';
+    tr.innerHTML=`<td>${i.row}</td><td>${i.col}</td><td>${i.issue}</td><td class="mono">${i.orig}</td><td class="mono">${i.fix}</td><td><span class="pill pill-${i.status}">${i.status}</span></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+function renderClean(){
+  document.getElementById('cleanHead').innerHTML='<tr>'+headers.map(h=>`<th>${h}</th>`).join('')+'</tr>';
+  const tb=document.getElementById('cleanBody'); tb.innerHTML='';
+  cleanedData.slice(0,25).forEach(row=>{ const tr=document.createElement('tr'); tr.innerHTML=row.map(v=>`<td>${v}</td>`).join(''); tb.appendChild(tr); });
+}
+
+function renderCharts(dupes,filled,fixed,score){
+  const ri=headers.findIndex(h=>h.toLowerCase()==='region');
+  const rev=headers.findIndex(h=>h.toLowerCase()==='revenue');
+  const si=headers.findIndex(h=>h.toLowerCase()==='status');
+  const pi=headers.findIndex(h=>h.toLowerCase()==='product');
+
+  const regionMap={}, statusMap={}, productMap={};
+  cleanedData.forEach(row=>{
+    if(ri>=0){ const k=row[ri]||'Unknown'; regionMap[k]=(regionMap[k]||0)+parseFloat(row[rev]||0); }
+    if(si>=0){ const k=row[si]||'Unknown'; statusMap[k]=(statusMap[k]||0)+1; }
+    if(pi>=0&&rev>=0){ const k=row[pi]||'Unknown'; productMap[k]=(productMap[k]||0)+parseFloat(row[rev]||0); }
+  });
+
+  const destroy=(c)=>{ if(c){ c.destroy(); } };
+  destroy(chartRegion); destroy(chartStatus); destroy(chartIssues); destroy(chartProducts);
+
+  chartRegion = new Chart(document.getElementById('chartRegion'),{
+    type:'bar', data:{labels:Object.keys(regionMap),datasets:[{label:'Revenue ($)',data:Object.values(regionMap).map(v=>Math.round(v)),backgroundColor:['#1a1a2e','#0f9b6e','#2563eb','#d97706']}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'$'+v.toLocaleString()}}}}
+  });
+
+  chartStatus = new Chart(document.getElementById('chartStatus'),{
+    type:'doughnut', data:{labels:Object.keys(statusMap),datasets:[{data:Object.values(statusMap),backgroundColor:['#0f9b6e','#d97706','#dc2626','#2563eb','#6b7280'],borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}}}
+  });
+
+  chartIssues = new Chart(document.getElementById('chartIssues'),{
+    type:'bar', data:{labels:['Duplicates','Missing Values','Format Fixes'],datasets:[{data:[dupes,filled,fixed],backgroundColor:['#dc2626','#d97706','#2563eb']}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
+  });
+
+  const topProducts = Object.entries(productMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  chartProducts = new Chart(document.getElementById('chartProducts'),{
+    type:'bar', data:{labels:topProducts.map(e=>e[0]),datasets:[{label:'Revenue ($)',data:topProducts.map(e=>Math.round(e[1])),backgroundColor:'#0f9b6e'}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>'$'+v.toLocaleString()}}}}
+  });
+
+  const topRegion = Object.entries(regionMap).sort((a,b)=>b[1]-a[1])[0];
+  const totalRev = Object.values(regionMap).reduce((a,b)=>a+b,0);
+  document.getElementById('insightGrid').innerHTML=`
+    <div class="insight-card"><h3><span class="dot" style="background:var(--green)"></span> Top Region</h3><p><strong>${topRegion?.[0]||'N/A'}</strong> leads in revenue with <strong>$${Math.round(topRegion?.[1]||0).toLocaleString()}</strong> total sales across all orders.</p></div>
+    <div class="insight-card"><h3><span class="dot" style="background:var(--blue)"></span> Total Revenue</h3><p>Clean dataset shows <strong>$${totalRev.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</strong> in total revenue across <strong>${cleanedData.length} orders</strong>.</p></div>
+    <div class="insight-card"><h3><span class="dot" style="background:var(--amber)"></span> Data Quality</h3><p>Data quality improved from raw state to <strong>${score}%</strong> after automated cleaning. ${issues.length} issue${issues.length!==1?'s':''} were detected and resolved.</p></div>
+    <div class="insight-card"><h3><span class="dot" style="background:var(--red)"></span> Risk Areas</h3><p>Missing values and inconsistent casing are the primary data risks. Automated rules now handle these on every new import.</p></div>`;
+}
+
+function renderLog(){
+  const el=document.getElementById('logList'); el.innerHTML='';
+  if(!auditLog.length){ el.innerHTML='<p style="color:var(--muted);font-size:13px">No changes recorded.</p>'; return; }
+  auditLog.forEach(l=>{
+    el.innerHTML+=`<div class="log-entry"><div class="log-icon ${l.color}">${l.icon}</div><div class="log-text"><strong>${l.text}</strong><small>${l.sub}</small></div></div>`;
+  });
+}
+
+function switchTab(name, btn){
+  document.querySelectorAll('.tab-btn').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+// ── DOWNLOADS ─────────────────────────────────────────────────────────────────
+function downloadCSV(){
+  const rows=[headers,...cleanedData];
+  const csv=rows.map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='clean_sales_data.csv'; a.click();
+}
+
+function downloadReport(){
+  const dupes=issues.filter(i=>i.status==='removed').length;
+  const filled=issues.filter(i=>i.status==='filled').length;
+  const fixed=issues.filter(i=>i.status==='fixed').length;
+  const score=Math.max(0,Math.round(100-(issues.length/(rawData.length*headers.length))*100));
+  let txt=`============================================================\n  DATA CLEANING & REPORTING AUTOMATION\n  Project 4 — Thiranex Data Analytics Internship\n============================================================\n\nGenerated : ${new Date().toLocaleString()}\nTool      : JavaScript + Chart.js Automation Engine\nStatus    : Completed Successfully\n\n------------------------------------------------------------\nSUMMARY\n------------------------------------------------------------\nRaw Rows              : ${rawData.length}\nClean Rows            : ${cleanedData.length}\nTotal Issues Found    : ${issues.length}\nDuplicates Removed    : ${dupes}\nMissing Values Filled : ${filled}\nFormatting Fixed      : ${fixed}\nData Quality Score    : ${score}%\n\n------------------------------------------------------------\nISSUE LOG\n------------------------------------------------------------\n`;
+  issues.forEach(i=>{ txt+=`Row ${i.row} | ${i.col} | ${i.issue} | "${i.orig}" → "${i.fix}" [${i.status}]\n`; });
+  txt+=`\n------------------------------------------------------------\nAUDIT TRAIL\n------------------------------------------------------------\n`;
+  auditLog.forEach(l=>{ txt+=`${l.text}\n  → ${l.sub}\n`; });
+  txt+=`\n============================================================\n  END OF REPORT\n============================================================\n`;
+  const a=document.createElement('a');
+  a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(txt);
+  a.download='data_audit_report.txt'; a.click();
+}
+</script>
+</body>
+</html>
